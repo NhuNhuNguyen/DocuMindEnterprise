@@ -14,7 +14,7 @@
 
 flowchart LR
     %% Actors
-    subgraph Actors["Tác nhân"]
+    subgraph Actors["Actors"]
         User["User / Employee"]
         Admin["HR / Knowledge Admin"]
         Worker["Background Worker"]
@@ -22,10 +22,10 @@ flowchart LR
 
     %% Use Cases
     subgraph DocuMind["DocuMind Enterprise System"]
-        UC1["UC-01: Tra cứu Quy trình (RAG Query)"]
-        UC2["UC-02: Thực thi AI Action (Tạo Ticket)"]
-        UC3["UC-03: Upload & Phân loại Document"]
-        UC4["UC-04: Quản lý Phân quyền Tài liệu"]
+        UC1["UC-01: Search Knowledge Base (RAG Query)"]
+        UC2["UC-02: Execute AI Action (Create Ticket)"]
+        UC3["UC-03: Upload & Categorize Document"]
+        UC4["UC-04: Manage Document Access Control"]
         UC5["UC-05: Ingest Document & Generate Embeddings"]
     end
 
@@ -100,26 +100,26 @@ sequenceDiagram
     participant Worker as Background Service
     participant Ollama as Ollama / Azure OpenAI
 
-    Admin->>API: POST /api/v1/documents/upload (File PDF)
-    API->>Storage: Lưu file PDF gốc
-    API->>DB: Tạo Record Document (Status = 'Pending')
-    API-->>Admin: Trả về 202 Accepted (DocumentId)
+    Admin->>API: POST /api/v1/documents/upload (PDF File)
+    API->>Storage: Save raw PDF file
+    API->>DB: Create Document record (Status = 'Pending')
+    API-->>Admin: Return 202 Accepted (DocumentId)
     
     API->>Worker: Enqueue Task (DocumentId)
     
     rect rgb(240, 240, 240)
-        Note over Worker,Ollama: Tiến trình xử lý Background (Async)
-        Worker->>DB: Cập nhật Status = 'Processing'
-        Worker->>Storage: Đọc nội dung file PDF
-        Worker->>Worker: Trích xuất Text & Chia nhỏ (Chunking ~500 tokens)
+        Note over Worker,Ollama: Asynchronous Background Processing
+        Worker->>DB: Update Status = 'Processing'
+        Worker->>Storage: Read PDF content
+        Worker->>Worker: Extract text & Chunking (~500 tokens)
         
-        loop Cho từng Chunk văn bản
+        loop For each text Chunk
             Worker->>Ollama: POST /api/embeddings (Chunk Content)
-            Ollama-->>Worker: Trả về Vector Float Array
-            Worker->>DB: Insert vào bảng DocumentChunks (pgvector)
+            Ollama-->>Worker: Return Vector Float Array
+            Worker->>DB: Insert into DocumentChunks table (pgvector)
         end
         
-        Worker->>DB: Cập nhật Document Status = 'Processed'
+        Worker->>DB: Update Document Status = 'Processed'
     end
 ```
 
@@ -134,19 +134,19 @@ sequenceDiagram
     participant DB as PostgreSQL (pgvector)
     participant SK as Semantic Kernel / AI Orchestrator
 
-    User->>API: POST /api/v1/chat/query ("Nghỉ sick day ở Ontario được tính ra sao?")
-    API->>Ollama: Tạo Embedding cho câu hỏi người dùng
-    Ollama-->>API: Trả về Query Vector
+    User->>API: POST /api/v1/chat/query ("What is the sick leave policy in Ontario?")
+    API->>Ollama: Generate Embedding for user query
+    Ollama-->>API: Return Query Vector
     
-    API->>DB: Query Top 3-5 Chunks gần nhất (Cosine Distance via EF Core)
-    DB-->>API: Trả về Chunks Content + Title Document tương ứng
+    API->>DB: Query Top 3-5 nearest Chunks (Cosine Distance via EF Core)
+    DB-->>API: Return Chunks Content + Document Metadata
     
-    API->>SK: Gửi Prompt: [Context từ Chunks] + [User Question]
-    SK->>Ollama: Gọi LLM sinh câu trả lời
-    Ollama-->>SK: Trả về văn bản đã tổng hợp
+    API->>SK: Send Prompt: [Context from Chunks] + [User Question]
+    SK->>Ollama: Call LLM for answer synthesis
+    Ollama-->>SK: Return synthesized response
     
-    SK-->>API: Trả về Answer + Citation Metadata
-    API-->>User: Trả về kết quả (Câu trả lời + Dẫn chứng trang/file PDF)
+    SK-->>API: Return Answer + Citation Metadata
+    API-->>User: Return response (Answer + Document/Page citations)
 ```
 
 ### System Architecture

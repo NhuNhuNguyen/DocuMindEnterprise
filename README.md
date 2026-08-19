@@ -10,6 +10,8 @@
 
 ## 📐 Architecture & Design
 ### Use Case Diagram
+```mermaid
+
 flowchart LR
     %% Actors
     subgraph Actors["Tác nhân"]
@@ -36,7 +38,11 @@ flowchart LR
 
     UC3 -.->|Triggers| UC5
 
+```
+
 ### ERD
+```mermaid
+
 erDiagram
     Users ||--o{ Documents : "uploads"
     Users ||--o{ SupportTickets : "creates"
@@ -80,8 +86,11 @@ erDiagram
         string Status "Open / InProgress / Closed"
         datetime CreatedAt
     }
+```
 
 ### Sequence Diagram: Document Ingestion Flow
+```mermaid
+
 sequenceDiagram
     autonumber
     actor Admin
@@ -112,8 +121,11 @@ sequenceDiagram
         
         Worker->>DB: Cập nhật Document Status = 'Processed'
     end
+```
 
 ### Sequence Diagram: RAG Search Flow
+```mermaid
+
 sequenceDiagram
     autonumber
     actor User
@@ -135,8 +147,11 @@ sequenceDiagram
     
     SK-->>API: Trả về Answer + Citation Metadata
     API-->>User: Trả về kết quả (Câu trả lời + Dẫn chứng trang/file PDF)
+```
 
 ### System Architecture
+```mermaid
+
 graph TD
     subgraph ClientLayer["Client / Presentation Layer"]
         UI["Web UI / Swagger UI"]
@@ -172,3 +187,4 @@ graph TD
     BgWorker --> EFCore
     EFCore --> Postgres
     AIOrchestrator --> OllamaLocal
+```
